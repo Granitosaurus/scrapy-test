@@ -1,5 +1,4 @@
 import re
-from typing import Iterable
 
 """
 These are base testers for scrapy-test framework
@@ -136,10 +135,12 @@ class MoreThan(_Compare):
 
 class Required:
     """Test whether value exists"""
+    def __init__(self, allowed=(False, 0)):
+        self.allowed = allowed
 
     def __call__(self, value):
-        if not value:
-            return f'{value} is empty'
+        if not value and value not in self.allowed:
+            return f'is empty value: "{value}" of type {type(value).__name__}'
         return ''
 
 

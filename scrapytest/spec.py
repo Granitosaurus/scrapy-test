@@ -1,5 +1,7 @@
 import re
-from scrapytest.tests import LessThan, MoreThan, Match, Compose
+from typing import List
+
+from scrapytest.tests import LessThan, MoreThan, Match, Compose, Required
 
 
 class ItemSpec:
@@ -16,16 +18,22 @@ class ItemSpec:
         field3_test = Type(int), MoreThan(1), LessThan(5)
     """
     item_cls = NotImplemented
-    tests = {}
+    tests = None
+    coverage = None
+    default_coverage = 0.1
+    default_test = Compose(Required())
 
     def __init__(self):
+        self.coverage = {}
+        self.tests = {}
         for k in dir(self):
-            if not k.endswith('_test'):
-                continue
-            funcs = getattr(self, k)
-            if not isinstance(funcs, (list, tuple)):
-                funcs = [funcs]
-            self.tests[k.split('_test')[0]] = Compose(*funcs)
+            if k.endswith('_test'):
+                funcs = getattr(self, k)
+                if not isinstance(funcs, (list, tuple)):
+                    funcs = [funcs]
+                self.tests[k.split('_test')[0]] = Compose(*funcs)
+            if k.endswith('_cov'):
+                self.coverage[k.split('_cov')[0]] = getattr(self, k)
 
 
 class StatsSpec:
@@ -34,7 +42,7 @@ class StatsSpec:
     Should contain `validate` attribute with <stat name re pattern>: Test functions
     see StatsSpec.validate
     """
-    spider_cls = NotImplemented
+    spider_cls: List = NotImplemented
     validate = {
         'log_count/ERROR$': LessThan(1),
         'item_scraped_count': MoreThan(1),
@@ -43,6 +51,8 @@ class StatsSpec:
 
     def __init__(self):
         self._validate_re = {k: re.compile(k) for k in self.validate}
+        if not isinstance(self.spider_cls, (list, tuple)):
+            self.spider_cls = [self.spider_cls]
 
     def validate_stats(self, stats):
         all_messages = []
@@ -57,4 +67,3 @@ class StatsSpec:
             if msg:
                 all_messages.append(f'{key}: {msg}')
         return all_messages
-

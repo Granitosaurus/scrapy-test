@@ -1,4 +1,6 @@
 import json
+from collections import Counter
+from time import time
 
 import click
 from scrapytest.utils import get_spiders_from_settings, get_test_settings
@@ -16,12 +18,25 @@ def get_spider_cls(name):
 @click.command()
 @click.argument('spider-name', required=False)
 @click.option('-c', '--cache', is_flag=True, help='enable HTTPCACHE_ENABLED setting for this run')
-def main(spider_name, cache):
+@click.option('--list', 'list_spiders', is_flag=True, help='list spiders with tests')
+def main(spider_name, cache, list_spiders):
     """run scrapy-test tests and output messages and appropriate exit code (1 for failed, 0 for passed)"""
+    start = time()
+    spiders = get_spiders_from_settings()
+    if not spiders:
+        click.echo('ERROR: no spiders found')
+        exit(1)
+    if list_spiders:
+        for spider in spiders:
+            print(f'{spider.name} @ {spider}')
+        exit(0)
     if spider_name:
-        spiders = [get_spider_cls(spider_name)]
-    else:
-        spiders = get_spiders_from_settings()
+        spider = get_spider_cls(spider_name)
+        if not spider:
+            click.echo(f'ERROR: spider {spider_name} not found')
+            exit(1)
+        else:
+            spiders = [spider]
     messages = []
     settings = get_test_settings()
     if cache:
@@ -29,13 +44,24 @@ def main(spider_name, cache):
     results, stats = run_spiders(spiders, settings=settings)
     for spider in spiders:
         messages.extend(validate_spider(spider, results[spider.name], stats[spider.name]))
-    click.echo(f"{'crawling results':=^80}", err=True)
-    for msg in messages:
+    for msg in collapse_msg_buffer(messages):
         click.echo(msg, err=True)
+    end = time()
+    click.echo(f"{f'elapsed {end - start:.2f} seconds':=^80}", err=True)
     if len(messages) > len(spiders) * 2:  # means some tests failed to pass
         exit(1)
     else:
         exit(0)
+
+
+def collapse_msg_buffer(buffer, format='{msg} [x{count}]'):
+    counter = Counter()
+    for msg in buffer:
+        counter[msg] += 1
+    collapsed = []
+    for msg, count in counter.items():
+        collapsed.append(format.format(msg=msg, count=count))
+    return collapsed
 
 
 def validate_spider(spider_cls, results, stats):
@@ -56,8 +82,19 @@ def validate_spider(spider_cls, results, stats):
     for msg in validator.validate_stats(spider_cls, stats):
         echo(msg)
         failed_stats_count += 1
-    if failed_count or failed_stats_count:
-        echo(f"{f'failed {failed_count} field tests and {failed_stats_count} stat tests':=^80}")
-    else:
+
+    failed_coverage_count = 0
+    for msg in validator.validate_coverage(results):
+        echo(msg)
+        failed_coverage_count += 1
+
+    # if failed_count or failed_stats_count or failed_coverage_count:
+    if failed_count:
+        echo(f"{f'failed {failed_count} field tests':=^80}")
+    if failed_stats_count:
+        echo(f"{f'failed {failed_stats_count} stat tests':=^80}")
+    if failed_coverage_count:
+        echo(f"{f'failed {failed_coverage_count} field coverage tests':=^80}")
+    if not any([failed_coverage_count, failed_stats_count, failed_count]):
         echo(f"{f'{spider_cls.__name__} all tests have passed!':=^80}")
     return buffer

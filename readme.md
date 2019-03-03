@@ -19,15 +19,22 @@ class MyItem(Item):
     url = Field()
 
 class TestMyItem(ItemSpec):
+    item_cls = MyItem
+    
+    # define tests
     name_test = Match('some-regex-pattern')
     url_test = lamda v: 'bad url' if 'cat' in v else ''
+    
+    # define coverage
+    url_cov = 100  # 100% - every item should have url field
 ```
 
-`scrapy-test` also supports stat output validation. When scrapy finished crawling it outputs various stats like error count etc. `StatSpec` can be defined to validate these stats:
+`scrapy-test` also supports stats output validation. When scrapy finished crawling it outputs various stats like error count etc. `StatSpec` can be defined to validate these stats:
 
 ```
 class MyStats(StatsSpec):
-    spider_cls = MySpider
+    spider_cls = MySpder1, MySpider2
+    # or multiple spiders
     validation = {  #stat_name_pattern : tests
         'item_scraped_count': MoreThan(1),
         'downloader/response_status_count/50\d': LessThan(1),

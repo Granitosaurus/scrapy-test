@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict, Counter
 from importlib import import_module
 from typing import List, Type
 
@@ -7,6 +8,32 @@ from scrapy.settings import Settings
 from scrapy.utils.conf import get_config, init_env
 from scrapytest import default_settings
 from scrapy.utils.project import ENVVAR
+
+
+def join_counter_dicts(*items):
+    """
+    Combine dictionaries of counters, i.e.:
+    {'foo': Counter('key': 1)}
+    +
+    {'foo': Counter('key': 2)}
+    =
+    {'foo': Counter('key': 3)}
+
+    """
+    merged = defaultdict(Counter)
+    for item in items:
+        for key, count in item.items():
+            # ensure that zero counts are preserved as every counter update eliminates them
+            zeroes = {k: v for k, v in merged[key].items() if v == 0}
+            merged[key] += count
+            # lazy update zero keys
+            for k, v in zeroes.items():
+                if v == 0 and k not in merged[key]:
+                    merged[key][k] = 0
+            for k, v in count.items():
+                if v == 0 and k not in merged[key]:
+                    merged[key][k] = 0
+    return merged
 
 
 def get_spiders_from_settings() -> List[Type[Spider]]:
