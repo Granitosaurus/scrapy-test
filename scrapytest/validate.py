@@ -8,7 +8,7 @@ from scrapytest.spec import ItemSpec, StatsSpec
 from scrapytest.utils import get_test_settings, join_counter_dicts
 
 
-# TODO add tech limit to printing
+# TODO add limit to printing length
 
 class Validator:
     """
@@ -29,6 +29,7 @@ class Validator:
         self.settings = settings
         self.skip_items_without_spec = settings.getbool('SKIP_ITEMS_WITHOUT_SPEC')
         self.skip_stats_without_spec = settings.getbool('SKIP_STATS_WITHOUT_SPEC')
+        self.empty_is_missing = settings.getbool('EMPTY_IS_MISSING')
 
     @classmethod
     def from_settings(cls):
@@ -60,6 +61,15 @@ class Validator:
                 messages.append(f'{obj_name(stat_spec)}: {msg}')
         return messages
 
+    def _field_is_missing(self, value):
+        if not self.empty_is_missing:
+            return False
+        try:
+            iter(value)  # non-iterable values can't be empty, e.g. 0, False
+        except TypeError:
+            return False
+        return not bool(value)
+
     def count_fields(self, items: List[Item]) -> Dict[Type, Counter]:
         """
         Counts all field in list of items
@@ -81,7 +91,7 @@ class Validator:
                             counter = join_counter_dicts(counter, _count_item(v))
             counter[type(item)][self._count_key] += 1
             for key in type(item).fields.keys():
-                if key in item:
+                if key in item and not self._field_is_missing(item[key]):
                     counter[type(item)][key] += 1
                 else:
                     counter[type(item)][key] = 0
@@ -132,6 +142,8 @@ class Validator:
             else:
                 return [f'Missing specification for {type(item)}']
         for key, value in item.items():
+            if self._field_is_missing(value):
+                continue
             # deal with nested item
             if isinstance(value, Item):
                 messages.extend(self.validate_item(value))

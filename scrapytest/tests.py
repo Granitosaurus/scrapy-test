@@ -31,8 +31,10 @@ class Map:
                 try:
                     messages = func(value)
                     all_messages.extend(messages if isinstance(messages, list) else [messages])
+                except TypeError as e:
+                    all_messages.append(f'{type(e).__name__}:{e} got "{type(value)}": {value}')
                 except Exception as e:
-                    all_messages.append(f'{type(e).__name__}:{e}')
+                    all_messages.append(f'{type(e).__name__}:{e} "{value}"')
         return all_messages
 
     def __str__(self):
@@ -54,6 +56,8 @@ class Compose:
             try:
                 messages = func(value)
                 all_messages.extend(messages if isinstance(messages, list) else [messages])
+            except TypeError as e:
+                all_messages.append(f'{type(e).__name__}:{e} got "{type(value)}": {value}')
             except Exception as e:
                 all_messages.append(f'{type(e).__name__}:{e}')
         return all_messages
@@ -135,12 +139,18 @@ class MoreThan(_Compare):
 
 class Required:
     """Test whether value exists"""
+
     def __init__(self, allowed=(False, 0)):
         self.allowed = allowed
 
     def __call__(self, value):
         if not value and value not in self.allowed:
             return f'is empty value: "{value}" of type {type(value).__name__}'
+        return ''
+
+
+class Pass:
+    def __call__(self, *args, **kwargs):
         return ''
 
 

@@ -1,7 +1,7 @@
 import re
 from typing import List
 
-from scrapytest.tests import LessThan, MoreThan, Match, Compose, Required
+from scrapytest.tests import LessThan, MoreThan, Match, Compose, Required, Pass
 
 
 class ItemSpec:
@@ -21,7 +21,8 @@ class ItemSpec:
     tests = None
     coverage = None
     default_coverage = 0.1
-    default_test = Compose(Required())
+    # default_test = Compose(Required())
+    default_test = Pass()
 
     def __init__(self):
         self.coverage = {}

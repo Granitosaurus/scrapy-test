@@ -1,5 +1,7 @@
 # 0.2
 
+- add `EMPTY_IS_MISSING` setting for considering empty values such as `"", [], {}` as missing for coverage.
+- add `--save` cli flag for saving test results as json file for further manual debugging.  
 - add merging of repeated error messages:
 
         Item.name: is bad
