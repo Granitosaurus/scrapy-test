@@ -10,7 +10,28 @@ from scrapytest import default_settings
 from scrapy.utils.project import ENVVAR
 
 
-def join_counter_dicts(*items):
+def collapse_buffer(buffer, format='{msg} [x{count}]'):
+    counter = Counter()
+    for msg in buffer:
+        counter[msg] += 1
+    collapsed = []
+    for msg, count in counter.items():
+        if count == 1:
+            collapsed.append(msg)
+        else:
+            collapsed.append(format.format(msg=msg, count=count))
+    return collapsed
+
+
+def is_empty(value) -> bool:
+    try:
+        iter(value)  # non-iterable values can't be empty, e.g. 0, False
+    except TypeError:
+        return False
+    return not bool(value)
+
+
+def join_counter_dicts(*items) -> defaultdict:
     """
     Combine dictionaries of counters, i.e.:
     {'foo': Counter('key': 1)}
@@ -36,7 +57,7 @@ def join_counter_dicts(*items):
     return merged
 
 
-def get_spiders_from_settings() -> List[Type[Spider]]:
+def get_spiders_from_settings() -> List[Type[Spider]]:  # pragma: no cover
     """Get spider classes from settings"""
     settings = get_test_settings()
     spiders = []
@@ -46,13 +67,13 @@ def get_spiders_from_settings() -> List[Type[Spider]]:
     return spiders
 
 
-def get_test_module():
+def get_test_module():  # pragma: no cover
     """get test module name that is contained in scrapy.cfg"""
     config = get_config()
     return config.get('settings', 'test')
 
 
-def get_test_settings() -> Settings:
+def get_test_settings() -> Settings:  # pragma: no cover
     """get test module contents as Settings object"""
     if ENVVAR not in os.environ:
         project = os.environ.get('SCRAPY_PROJECT', 'default')
@@ -67,7 +88,7 @@ def get_test_settings() -> Settings:
     return settings
 
 
-def obj_name(obj):
+def obj_name(obj) -> str:
     try:
         # function
         return obj.__name__

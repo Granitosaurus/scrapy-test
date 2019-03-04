@@ -1,11 +1,10 @@
 import json
-from collections import Counter
 from time import time
 
 import click
 from scrapy import Item
 
-from scrapytest.utils import get_spiders_from_settings, get_test_settings
+from scrapytest.utils import get_spiders_from_settings, get_test_settings, collapse_buffer
 
 from scrapytest.validate import Validator
 from scrapytest.runner import run_spiders
@@ -28,7 +27,7 @@ def get_spider_cls(name):
 @click.option('-c', '--cache', is_flag=True, help='enable HTTPCACHE_ENABLED setting for this run')
 @click.option('--list', 'list_spiders', is_flag=True, help='list spiders with tests')
 @click.option('--save', help='save spider results to a file', type=click.File('w'))  # todo support
-def main(spider_name, cache, list_spiders, save):
+def main(spider_name, cache, list_spiders, save):  # pragma: no cover
     """run scrapy-test tests and output messages and appropriate exit code (1 for failed, 0 for passed)"""
     start = time()
     spiders = get_spiders_from_settings()
@@ -53,7 +52,7 @@ def main(spider_name, cache, list_spiders, save):
     results, stats = run_spiders(spiders, settings=settings)
     for spider in spiders:
         messages.extend(validate_spider(spider, results[spider.name], stats[spider.name]))
-    for msg in collapse_msg_buffer(messages):
+    for msg in collapse_buffer(messages):
         click.echo(msg, err=True)
     end = time()
     click.echo(f"{f'elapsed {end - start:.2f} seconds':=^80}", err=True)
@@ -66,20 +65,7 @@ def main(spider_name, cache, list_spiders, save):
         exit(0)
 
 
-def collapse_msg_buffer(buffer, format='{msg} [x{count}]'):
-    counter = Counter()
-    for msg in buffer:
-        counter[msg] += 1
-    collapsed = []
-    for msg, count in counter.items():
-        if count == 1:
-            collapsed.append(msg)
-        else:
-            collapsed.append(format.format(msg=msg, count=count))
-    return collapsed
-
-
-def validate_spider(spider_cls, results, stats):
+def validate_spider(spider_cls, results, stats):  # pragma: no cover
     buffer = []
 
     def echo(text):

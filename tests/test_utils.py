@@ -1,6 +1,32 @@
 from collections import Counter
 
-from scrapytest.utils import join_counter_dicts
+from scrapytest.utils import join_counter_dicts, is_empty, obj_name, collapse_buffer
+
+
+def test_collapse_buffer():
+    messages = [
+        'one',
+        'two',
+        'two',
+        'three',
+        'two'
+    ]
+    expected = [
+        'one', 'two [x3]', 'three'
+    ]
+    assert collapse_buffer(messages) == expected
+
+
+def test_is_empty():
+    assert is_empty('') is True
+    assert is_empty(0) is False
+    assert is_empty(False) is False
+    assert is_empty('foo') is False
+
+
+def test_obj_name():
+    assert obj_name('something') == 'str'
+    assert obj_name(str) == 'str'
 
 
 def test_join_counter_dicts():
@@ -60,4 +86,3 @@ def test_join_counter_dicts():
         'key2': Counter({'field1': 5, 'field2': 5}),
     }
     assert dict(join_counter_dicts(*inp)) == expected
-

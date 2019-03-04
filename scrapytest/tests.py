@@ -1,5 +1,7 @@
 import re
 
+from scrapytest.utils import is_empty
+
 """
 These are base testers for scrapy-test framework
 
@@ -14,13 +16,9 @@ e.g.
 """
 
 
-def to_list(value):
-    if isinstance(value, (list, tuple)):
-        return list(value)
-    return value
-
-
 class Map:
+    """Map set of tests to every value"""
+
     def __init__(self, *functions):
         self.functions = functions
 
@@ -35,7 +33,7 @@ class Map:
                     all_messages.append(f'{type(e).__name__}:{e} got "{type(value)}": {value}')
                 except Exception as e:
                     all_messages.append(f'{type(e).__name__}:{e} "{value}"')
-        return all_messages
+        return [msg for msg in all_messages if msg]
 
     def __str__(self):
         full = []
@@ -60,7 +58,7 @@ class Compose:
                 all_messages.append(f'{type(e).__name__}:{e} got "{type(value)}": {value}')
             except Exception as e:
                 all_messages.append(f'{type(e).__name__}:{e}')
-        return all_messages
+        return [msg for msg in all_messages if msg]
 
     def __str__(self):
         full = []
@@ -85,6 +83,9 @@ class _Compare:
     def __init__(self, value):
         self.value = value
 
+    def __str__(self):
+        return f'{type(self).__name__}({self.value})'
+
 
 class Len:
     class less_than(_Compare):
@@ -104,10 +105,6 @@ class Len:
             if len(value) == self.value:
                 return ''
             return f'length {len(value)} when expected ={self.value}'
-
-
-if __name__ == '__main__':
-    print(Len.less_than(5)('hello'))
 
 
 class LessThan(_Compare):
@@ -140,11 +137,8 @@ class MoreThan(_Compare):
 class Required:
     """Test whether value exists"""
 
-    def __init__(self, allowed=(False, 0)):
-        self.allowed = allowed
-
     def __call__(self, value):
-        if not value and value not in self.allowed:
+        if is_empty(value):
             return f'is empty value: "{value}" of type {type(value).__name__}'
         return ''
 

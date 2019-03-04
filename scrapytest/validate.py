@@ -5,7 +5,7 @@ from scrapy import Item
 from scrapy.settings import Settings
 
 from scrapytest.spec import ItemSpec, StatsSpec
-from scrapytest.utils import get_test_settings, join_counter_dicts
+from scrapytest.utils import get_test_settings, join_counter_dicts, is_empty
 
 
 # TODO add limit to printing length
@@ -64,11 +64,8 @@ class Validator:
     def _field_is_missing(self, value):
         if not self.empty_is_missing:
             return False
-        try:
-            iter(value)  # non-iterable values can't be empty, e.g. 0, False
-        except TypeError:
-            return False
-        return not bool(value)
+        return is_empty(value)
+
 
     def count_fields(self, items: List[Item]) -> Dict[Type, Counter]:
         """
@@ -120,7 +117,7 @@ class Validator:
             total_items = counter[self._count_key]
             counter.pop(self._count_key)
             for field, count in counter.items():
-                expected = spec.coverage.get(field, spec.default_coverage)
+                expected = spec.coverage.get(field, spec.default_cov)
                 perc = count * 100 / total_items
                 if perc < expected:
                     messages.append(f'insufficient coverage: {item_cls.__name__}.{field}: '
