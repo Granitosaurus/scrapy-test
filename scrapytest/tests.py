@@ -122,7 +122,7 @@ class Equal(_Compare):
     def __call__(self, value):
         if value == self.value:
             return ''
-        return f'{value} != {self.value}'
+        return f'{type(value).__name__}:{value} != {type(self.value).__name__}:{self.value}'
 
 
 class MoreThan(_Compare):

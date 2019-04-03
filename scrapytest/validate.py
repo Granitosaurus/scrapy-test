@@ -66,7 +66,6 @@ class Validator:
             return False
         return is_empty(value)
 
-
     def count_fields(self, items: List[Item]) -> Dict[Type, Counter]:
         """
         Counts all field in list of items

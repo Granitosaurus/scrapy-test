@@ -9,8 +9,16 @@ from scrapy.utils.conf import get_config, init_env
 from scrapytest import default_settings
 from scrapy.utils.project import ENVVAR
 
+from scrapytest.exceptions import ConfigError
+
 
 def collapse_buffer(buffer, format='{msg} [x{count}]'):
+    """
+    collapse repeating messages and add count:
+
+    >>> collapse_buffer(['foo', 'foo'])
+    ['foo [2]']
+    """
     counter = Counter()
     for msg in buffer:
         counter[msg] += 1
@@ -67,20 +75,25 @@ def get_spiders_from_settings() -> List[Type[Spider]]:  # pragma: no cover
     return spiders
 
 
-def get_test_module():  # pragma: no cover
-    """get test module name that is contained in scrapy.cfg"""
+def get_test_config():
+    """get [test] config section of scrapy.cfg"""
     config = get_config()
-    return config.get('settings', 'test')
+    try:
+        return config['test']
+    except KeyError:
+        raise ConfigError('scrapytest configuration is missing in scrapy.cfg, required "[test]" section')
 
 
-def get_test_settings() -> Settings:  # pragma: no cover
-    """get test module contents as Settings object"""
+def get_test_settings(config=None) -> Settings:  # pragma: no cover
+    """get test module contents as Settings object from scrapy-test config section"""
+    if not config:
+        config = get_test_config()
     if ENVVAR not in os.environ:
         project = os.environ.get('SCRAPY_PROJECT', 'default')
         init_env(project)
     settings = Settings()
     settings.setmodule(default_settings, priority='default')
-    settings_module = import_module(get_test_module())
+    settings_module = import_module(config['root'])
     for key in dir(settings_module):
         value = getattr(settings_module, key)
         if (isinstance(value, type) and key.lower().startswith('test')) or key.isupper():

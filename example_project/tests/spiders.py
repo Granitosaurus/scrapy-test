@@ -2,6 +2,13 @@ from scrapy import Request
 
 from example.spiders import HackernewsSpider
 
+"""
+Test spiders here are extending normal spiders just with controlled and limited
+startup.
+In this case we override HackernewsSpider to skip discovering articles and instead
+go to articles we define explicitly.
+"""
+
 
 class TestHackernewsSpider(HackernewsSpider):
     name = 'test1'

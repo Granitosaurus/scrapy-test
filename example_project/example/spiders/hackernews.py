@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from scrapy import Item, Request
+from scrapy import Request
 
 from example.items import PostItemLoader, CommentItemLoader
 

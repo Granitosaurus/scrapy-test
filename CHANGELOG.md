@@ -1,3 +1,11 @@
+# 0.3
+- change scrapy.cfg module config to `\[test]root=package.module`
+- add notification logic
+- add slack notifier
+- add `required` feature to `StatsSpec`
+- update example
+- lots of bugifxes and refactoring
+
 # 0.2
 
 - add `EMPTY_IS_MISSING` setting for considering empty values such as `"", [], {}` as missing for coverage.

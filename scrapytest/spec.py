@@ -39,22 +39,30 @@ class ItemSpec:
 class StatsSpec:
     """
     Scrapy stats specification.
-    Should contain `validate` attribute with <stat name re pattern>: Test functions
+   `validate` attribute with <stat name re pattern>: Test functions
     see StatsSpec.validate
     e.g.
     validate = {
         'some_stat/number/[0-5]': Match('success'),
     }
+    `required` attribute contains a list of <stat name re patterns> that
+    are required in stat output.
     """
     spider_cls: List = NotImplemented
     validate = {
         'log_count/ERROR$': LessThan(1),
-        'item_scraped_count': MoreThan(1),
+        'item_scraped_count': MoreThan(0),
         'finish_reason': Match('finished'),
     }
+    required = []
 
     def __init__(self):
+        self._required_re = {k: re.compile(k) for k in self.required}
         self._validate_re = {k: re.compile(k) for k in self.validate}
+        for key, funcs in self.validate.items():
+            if not isinstance(funcs, (list, tuple)):
+                funcs = [funcs]
+            self.validate[key] = Compose(*funcs)
         if not isinstance(self.spider_cls, (list, tuple)):
             self.spider_cls = [self.spider_cls]
         if not isinstance(self.spider_cls, list):
@@ -62,14 +70,20 @@ class StatsSpec:
 
     def validate_stats(self, stats: dict) -> List[str]:
         all_messages = []
-        for key, value in stats.items():
-            for k, validation in self._validate_re.items():
-                if validation.match(key):
-                    validation_func = self.validate[k]
+        for pattern, validation_func in self.validate.items():
+            pattern = self._validate_re[pattern]
+            for stat, value in stats.items():
+                if not pattern.match(stat):
+                    continue
+                msgs = validation_func(value)
+                if msgs:
+                    all_messages.extend([f'{stat}: {msg}' for msg in msgs])
+        for pattern in self.required:
+            compiled = self._required_re[pattern]
+            for stat in stats.keys():
+                if compiled.match(stat):
                     break
             else:
-                continue
-            msg = validation_func(value)
-            if msg:
-                all_messages.append(f'{key}: {msg}')
+                all_messages.append(f'{pattern}: missing')
+
         return all_messages

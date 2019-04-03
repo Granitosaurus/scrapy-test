@@ -4,7 +4,8 @@ from time import time
 import click
 from scrapy import Item
 
-from scrapytest.utils import get_spiders_from_settings, get_test_settings, collapse_buffer
+from scrapytest.notifiers import SlackNotifier
+from scrapytest.utils import get_spiders_from_settings, get_test_settings, collapse_buffer, get_test_config
 
 from scrapytest.validate import Validator
 from scrapytest.runner import run_spiders
@@ -22,18 +23,51 @@ def get_spider_cls(name):
             return spider
 
 
+EXIT_CALLBACKS = {
+    0: [],
+    1: [],
+    'all': [],
+}
+
+
+def exit_msg(code, msg):
+    click.echo(msg, err=True)
+    callbacks = EXIT_CALLBACKS.get(code, [])
+    callbacks += EXIT_CALLBACKS['all']
+    for cb in callbacks:
+        if isinstance(cb, (tuple, list)) and len(cb) == 2:
+            cb, kwargs = cb
+        else:
+            kwargs = {}
+        cb(code, msg, **kwargs)
+    exit(code)
+
+
+def notify_slack(code, msg, config, context=None):
+    click.echo(f"sending slack msg to {config['slack_channel']}")
+    SlackNotifier.from_config(config).notify(code, msg, context)
+
+
+NOTIFIERS = {
+    'slack': notify_slack,
+}
+
+
 @click.command()
 @click.argument('spider-name', required=False)
 @click.option('-c', '--cache', is_flag=True, help='enable HTTPCACHE_ENABLED setting for this run')
 @click.option('--list', 'list_spiders', is_flag=True, help='list spiders with tests')
 @click.option('--save', help='save spider results to a file', type=click.File('w'))  # todo support
-def main(spider_name, cache, list_spiders, save):  # pragma: no cover
+@click.option('--notify-on-error', help='send notification on failure', default='')
+@click.option('--notify-on-all', help='send notification of any', default='')
+@click.option('--notify-on-success', help='send notification on success', default='')
+@click.option('-s', '--set-config', 'added_config', help='set config value', multiple=True)
+def main(spider_name, cache, list_spiders, save, notify_on_error, notify_on_all, notify_on_success, added_config):  # pragma: no cover
     """run scrapy-test tests and output messages and appropriate exit code (1 for failed, 0 for passed)"""
-    start = time()
+    # get spiders
     spiders = get_spiders_from_settings()
     if not spiders:
-        click.echo('ERROR: no spiders found')
-        exit(1)
+        exit_msg(1, 'ERROR: no spiders found')
     if list_spiders:
         for spider in spiders:
             print(f'{spider.name} @ {spider}')
@@ -41,28 +75,45 @@ def main(spider_name, cache, list_spiders, save):  # pragma: no cover
     if spider_name:
         spider = get_spider_cls(spider_name)
         if not spider:
-            click.echo(f'ERROR: spider {spider_name} not found')
-            exit(1)
+            exit_msg(1, f'ERROR: spider {spider_name} not found')
         else:
             spiders = [spider]
+    spider_names = [s.__name__ for s in spiders]
+
+    # setup notifiers
+    added_config = {k.split('=', 1)[0]: k.split('=', 1)[1] for k in added_config}
+    config = {**get_test_config(), **added_config}
+    to_notify = {
+        0: [n.strip() for n in notify_on_success.split(',') if n.strip()],
+        1: [n.strip() for n in notify_on_error.split(',') if n.strip()],
+        'all': [n.strip() for n in notify_on_all.split(',') if n.strip()],
+    }
+    for code, notifiers in to_notify.items():
+        for notifier in notifiers:
+            kwargs = dict(config=config, context=', '.join(spider_names))
+            EXIT_CALLBACKS[code].append((NOTIFIERS[notifier], kwargs))
+
+    # run tests
+    start = time()
     messages = []
-    settings = get_test_settings()
+    settings = get_test_settings(config)
     if cache:
         settings['HTTPCACHE_ENABLED'] = True
     results, stats = run_spiders(spiders, settings=settings)
     for spider in spiders:
         messages.extend(validate_spider(spider, results[spider.name], stats[spider.name]))
-    for msg in collapse_buffer(messages):
-        click.echo(msg, err=True)
-    end = time()
-    click.echo(f"{f'elapsed {end - start:.2f} seconds':=^80}", err=True)
+    messages = collapse_buffer(messages)
+
     if save:
         save.write(json.dumps(results, indent=2, default=serialize_items))
         save.close()
+    exit_code = 0
     if len(messages) > len(spiders) * 2:  # means some tests failed to pass
-        exit(1)
-    else:
-        exit(0)
+        exit_code = 1
+
+    end = time()
+    messages = [f"{f' elapsed {end - start:.2f} seconds ':=^80}"] + messages
+    exit_msg(exit_code, '\n'.join(messages))
 
 
 def validate_spider(spider_cls, results, stats):  # pragma: no cover
@@ -71,7 +122,6 @@ def validate_spider(spider_cls, results, stats):  # pragma: no cover
     def echo(text):
         buffer.append(text)
 
-    echo(f"{f'{spider_cls.__name__} validating results':=^80}")
     validator = Validator.from_settings()
 
     failed_count = 0
@@ -91,11 +141,11 @@ def validate_spider(spider_cls, results, stats):  # pragma: no cover
 
     # if failed_count or failed_stats_count or failed_coverage_count:
     if failed_count:
-        echo(f"{f'failed {failed_count} field tests':=^80}")
+        echo(f"{f' {spider_cls.__name__} failed {failed_count} field tests ':=^80}")
     if failed_stats_count:
-        echo(f"{f'failed {failed_stats_count} stat tests':=^80}")
+        echo(f"{f' {spider_cls.__name__} failed {failed_stats_count} stat tests ':=^80}")
     if failed_coverage_count:
-        echo(f"{f'failed {failed_coverage_count} field coverage tests':=^80}")
+        echo(f"{f' {spider_cls.__name__} failed {failed_coverage_count} field coverage tests':=^80} ")
     if not any([failed_coverage_count, failed_stats_count, failed_count]):
-        echo(f"{f'{spider_cls.__name__} all tests have passed!':=^80}")
+        echo(f"{f' {spider_cls.__name__} all tests have passed!':=^80} ")
     return buffer

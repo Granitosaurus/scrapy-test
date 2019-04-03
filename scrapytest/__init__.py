@@ -1,0 +1,1 @@
+from scrapytest.spec import ItemSpec, StatsSpec

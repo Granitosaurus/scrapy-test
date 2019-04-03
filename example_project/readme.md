@@ -7,6 +7,9 @@ This is example scrapy crawler using scrapy-test implementation.
 
 You can structure the tests any way you want - single module, multiple modules, packages - as long as all the module defined in `scrapy.cfg` has `ItemSpec`, `StatSpect` and `Spider` objects.
 
+see [tests/README.md](./tests/README.md) for this projects tests structure.  
+see [scrapy.cfg](./scrapy.cfg) for tests configuration
+
 ## Running
 
 Run against live data:

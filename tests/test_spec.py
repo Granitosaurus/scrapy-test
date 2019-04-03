@@ -55,7 +55,7 @@ def test_StatsSpec():
     }
     expected = [
         'log_count/ERROR: 100 !< 1',
-        'item_scraped_count: 0 !> 1',
+        'item_scraped_count: 0 !> 0',
         'finish_reason: "test" does not match pettern "finished"',
     ]
     assert MySpec().validate_stats(stats) == expected

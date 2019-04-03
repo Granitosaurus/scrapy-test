@@ -3,6 +3,10 @@ from scrapytest.tests import Match, Type, MoreThan, Required
 from example.items import PostItem, CommentItem
 from scrapytest.spec import ItemSpec
 
+"""
+Item tests here are defined for every Item object crawler might return
+"""
+
 
 class TestPost(ItemSpec):
     # defining item that is being covered
