@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 from time import time
 
 import click
@@ -100,17 +101,19 @@ def main(spider_name, cache, list_spiders, save, notify_on_error, notify_on_all,
     if cache:
         settings['HTTPCACHE_ENABLED'] = True
     results, stats = run_spiders(spiders, settings=settings)
+    failures = Counter()
     for spider in spiders:
-        messages.extend(validate_spider(spider, results[spider.name], stats[spider.name]))
+        buffer, failed = validate_spider(spider, results[spider.name], stats[spider.name])
+        failures.update(failed)
+        messages.extend(buffer)
     messages = collapse_buffer(messages)
 
     if save:
         save.write(json.dumps(results, indent=2, default=serialize_items))
         save.close()
     exit_code = 0
-    if len(messages) > len(spiders) * 2:  # means some tests failed to pass
+    if any(failures.values()):
         exit_code = 1
-
     end = time()
     messages = [f"{f' elapsed {end - start:.2f} seconds ':=^80}"] + messages
     exit_msg(exit_code, '\n'.join(messages))
@@ -148,4 +151,4 @@ def validate_spider(spider_cls, results, stats):  # pragma: no cover
         echo(f"{f' {spider_cls.__name__} failed {failed_coverage_count} field coverage tests':=^80} ")
     if not any([failed_coverage_count, failed_stats_count, failed_count]):
         echo(f"{f' {spider_cls.__name__} all tests have passed!':=^80} ")
-    return buffer
+    return buffer, {'item': failed_count, 'stat': failed_stats_count, 'coverage': failed_coverage_count}
