@@ -32,8 +32,9 @@ class Validator:
         self.empty_is_missing = settings.getbool('EMPTY_IS_MISSING')
 
     @classmethod
-    def from_settings(cls):
-        settings = get_test_settings()
+    def from_settings(cls, settings=None):
+        if not settings:
+            settings = get_test_settings()
         specs = []
         for key, value in settings.items():
             if value in [ItemSpec, StatsSpec]:
