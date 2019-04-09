@@ -1,11 +1,11 @@
 from setuptools import setup
 
-with open('readme.md') as f:
+with open('README.md') as f:
     long_description = f.read()
 
 setup(
     name='scrapy-test',
-    version='0.3',
+    version='0.4',
     packages=['scrapytest'],
     url='https://gitlab.com/granitosaurus/scrapy-test',
     license='GPLv3',

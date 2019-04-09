@@ -1,3 +1,8 @@
+# 0.4
+- rework how cli determines whether a test was success or not
+- add `Search` Test
+- add Settings optional argument to Validate object 
+
 # 0.3
 - change scrapy.cfg module config to `\[test]root=package.module`
 - add notification logic
