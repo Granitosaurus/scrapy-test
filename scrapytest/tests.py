@@ -70,12 +70,24 @@ class Compose:
 class Match:
     """Regex pattern match tester"""
 
-    def __init__(self, pattern):
-        self.pattern = re.compile(pattern)
+    def __init__(self, pattern, flags=0):
+        self.pattern = re.compile(pattern, flags=flags)
 
     def __call__(self, value):
         if not self.pattern.match(value):
-            return f'"{value}" does not match pettern "{self.pattern.pattern}"'
+            return f'"{value}" does not match pattern "{self.pattern.pattern}"'
+        return ''
+
+
+class Search:
+    """Regex pattern search tester"""
+
+    def __init__(self, pattern, flags=0):
+        self.pattern = re.compile(pattern, flags=flags)
+
+    def __call__(self, value):
+        if not self.pattern.search(value):
+            return f'"{value}" does contain pattern "{self.pattern.pattern}"'
         return ''
 
 
