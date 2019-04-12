@@ -15,7 +15,7 @@ class Validator:
     Main test class that performs validation for specified tests
     """
 
-    _count_key = '_self'
+    _count_key = '_self'  # used for counting coverage
 
     def __init__(self, specs: List[Union[ItemSpec, StatsSpec]], settings: Settings):
         self.item_specs = {}
@@ -116,7 +116,7 @@ class Validator:
                     continue
             total_items = counter[self._count_key]
             counter.pop(self._count_key)
-            for field, count in counter.items():
+            for field, count in counter.most_common():
                 expected = spec.coverage.get(field, spec.default_cov)
                 perc = count * 100 / total_items
                 if perc < expected:
