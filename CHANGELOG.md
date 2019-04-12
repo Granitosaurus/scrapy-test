@@ -1,3 +1,9 @@
+# 0.5
+- add TypeGuard type checking which supports python type annotation like matching: e.g. List\[Union\[str,int\]]
+- add `-s` and `-c` flags for overriding config and settings entries respectively
+- adjust various get_<config/setting> functions to take optional kwarg of root settings or config object
+- change coverage output to be ordered
+
 # 0.4
 - rework how cli determines whether a test was success or not
 - add `Search` Test

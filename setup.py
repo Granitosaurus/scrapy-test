@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setup(
     name='scrapy-test',
-    version='0.4',
+    version='0.5',
     packages=['scrapytest'],
     url='https://gitlab.com/granitosaurus/scrapy-test',
     license='GPLv3',
