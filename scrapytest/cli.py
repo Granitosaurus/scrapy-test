@@ -4,6 +4,7 @@ from time import time
 
 import click
 from scrapy import Item
+from scrapy.utils.project import get_project_settings
 
 from scrapytest.notifiers import SlackNotifier
 from scrapytest.utils import get_spiders_from_settings, get_test_settings, collapse_buffer, get_test_config
@@ -56,14 +57,16 @@ NOTIFIERS = {
 
 @click.command()
 @click.argument('spider-name', required=False)
-@click.option('-c', '--cache', is_flag=True, help='enable HTTPCACHE_ENABLED setting for this run')
+@click.option('--cache', is_flag=True, help='enable HTTPCACHE_ENABLED setting for this run')
 @click.option('--list', 'list_spiders', is_flag=True, help='list spiders with tests')
 @click.option('--save', help='save spider results to a file', type=click.File('w'))  # todo support
 @click.option('--notify-on-error', help='send notification on failure', default='')
 @click.option('--notify-on-all', help='send notification of any', default='')
 @click.option('--notify-on-success', help='send notification on success', default='')
-@click.option('-s', '--set-config', 'added_config', help='set config value', multiple=True)
-def main(spider_name, cache, list_spiders, save, notify_on_error, notify_on_all, notify_on_success, added_config):  # pragma: no cover
+@click.option('-c', '--set-config', 'added_config', help='set config value', multiple=True)
+@click.option('-s', '--set-setting', 'added_settings', help='set settings value', multiple=True)
+def main(spider_name, cache, list_spiders, save, notify_on_error, notify_on_all, notify_on_success, added_config,
+         added_settings):  # pragma: no cover
     """run scrapy-test tests and output messages and appropriate exit code (1 for failed, 0 for passed)"""
     # get spiders
     spiders = get_spiders_from_settings()
@@ -97,7 +100,12 @@ def main(spider_name, cache, list_spiders, save, notify_on_error, notify_on_all,
     # run tests
     start = time()
     messages = []
-    settings = get_test_settings(config)
+
+    added_settings = {k.split('=', 1)[0]: k.split('=', 1)[1] for k in added_settings}
+    settings = get_project_settings()
+    test_settings = get_test_settings(config)
+    settings.update(test_settings, priority=40)
+    settings.update(added_settings, priority=50)
     if cache:
         settings['HTTPCACHE_ENABLED'] = True
     results, stats = run_spiders(spiders, settings=settings)
