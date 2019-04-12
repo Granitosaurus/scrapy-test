@@ -2,6 +2,13 @@ import re
 
 from scrapytest.utils import is_empty
 
+try:
+    from typeguard import check_type
+
+    HAS_TYPEGUARD = True
+except ImportError:
+    HAS_TYPEGUARD = False
+
 """
 These are base testers for scrapy-test framework
 
@@ -164,11 +171,15 @@ class Type:
     """Check whether value matches a type"""
 
     def __init__(self, type):
+        if not HAS_TYPEGUARD:
+            raise ImportError('typeguard is required for type matching: pip install typeguard')
         self.type = type
 
     def __call__(self, value):
-        if not isinstance(value, self.type):
-            return f'{value} is unexpected type {type(value)}, expected {self.type}'
+        try:
+            check_type('', value, self.type)
+        except TypeError as e:
+            return e.args[0]
         return ''
 
     def __eq__(self, other):
