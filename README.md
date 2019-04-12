@@ -136,7 +136,7 @@ Usage: scrapy-test [OPTIONS] [SPIDER_NAME]
   failed, 0 for passed)
 
 Options:
-  -c, --cache  enable HTTPCACHE_ENABLED setting for this run
+  --cache  enable HTTPCACHE_ENABLED setting for this run
   --help       Show this message and exit.
 ```
 
@@ -149,4 +149,28 @@ Spider name can be skipped for running all spiders
 
 ## Notifications
 
-`scrapy-test` supports
+`scrapy-test` supports notification hooks on either test failure or success:
+
+
+      --notify-on-error TEXT    send notification on failure, choice from:
+                                ['slack']
+      --notify-on-all TEXT      send notification on failure or success, choice
+                                from: ['slack']
+      --notify-on-success TEXT  send notification on success, choice from:
+                                ['slack']
+
+Right `scrapy-test` offers these notifiers:
+
+    * Slack - to configure slack notification follow slack [incoming webhooks](https://slack.com/apps/A0F7XDUAZ-incoming-webhooks) app and supply these settings in `scrapy.cfg`:
+    
+        slack_url = https://hooks.slack.com/services/AAA/BBB/CCC
+        # where the message goes to
+        slack_channel = #cats
+        # bot's name
+        slack_username = bender
+        # bot's avatar
+        slack_icon_emoji = :bender:
+        # maintainer will be mentioned on error
+        slack_maintainer = @bernard
+
+    

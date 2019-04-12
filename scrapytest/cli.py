@@ -60,9 +60,9 @@ NOTIFIERS = {
 @click.option('--cache', is_flag=True, help='enable HTTPCACHE_ENABLED setting for this run')
 @click.option('--list', 'list_spiders', is_flag=True, help='list spiders with tests')
 @click.option('--save', help='save spider results to a file', type=click.File('w'))  # todo support
-@click.option('--notify-on-error', help='send notification on failure', default='')
-@click.option('--notify-on-all', help='send notification of any', default='')
-@click.option('--notify-on-success', help='send notification on success', default='')
+@click.option('--notify-on-error', help=f'send notification on failure, choice from: {list(NOTIFIERS)}', default='')
+@click.option('--notify-on-all', help=f'send notification on failure or success, choice from: {list(NOTIFIERS)}', default='')
+@click.option('--notify-on-success', help=f'send notification on success, choice from: {list(NOTIFIERS)}', default='')
 @click.option('-c', '--set-config', 'added_config', help='set config value', multiple=True)
 @click.option('-s', '--set-setting', 'added_settings', help='set settings value', multiple=True)
 def main(spider_name, cache, list_spiders, save, notify_on_error, notify_on_all, notify_on_success, added_config,
