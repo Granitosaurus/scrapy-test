@@ -65,9 +65,10 @@ def join_counter_dicts(*items) -> defaultdict:
     return merged
 
 
-def get_spiders_from_settings() -> List[Type[Spider]]:  # pragma: no cover
+def get_spiders_from_settings(settings=None) -> List[Type[Spider]]:  # pragma: no cover
     """Get spider classes from settings"""
-    settings = get_test_settings()
+    if not settings:
+        settings = get_test_settings()
     spiders = []
     for key, value in settings.items():
         if isinstance(value, type) and issubclass(value, Spider):
@@ -75,9 +76,10 @@ def get_spiders_from_settings() -> List[Type[Spider]]:  # pragma: no cover
     return spiders
 
 
-def get_test_config():
+def get_test_config(config=None):
     """get [test] config section of scrapy.cfg"""
-    config = get_config()
+    if not config:
+        config = get_config()
     try:
         return config['test']
     except KeyError:
