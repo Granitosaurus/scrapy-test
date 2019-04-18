@@ -43,10 +43,7 @@ def run_spiders(spiders, settings=None, **spider_kwargs) -> Tuple[dict, dict]:
     runner = CrawlerProcess(all_settings)
     configure_logging(all_settings, True)
     log_scrapy_info(all_settings)
-    d = runner.crawl(spiders[0], **spider_kwargs)
-    if len(spiders) > 1:
-        for spider in spiders[1:]:
-            d.addBoth(lambda _: runner.crawl(spider, **spider_kwargs))
-    d.addBoth(lambda _: reactor.stop())
-    reactor.run()  # the script will block here until the crawling is finished
+    for spider in spiders:
+        runner.crawl(spider, **spider_kwargs)
+    runner.start()
     return results, stats

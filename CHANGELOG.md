@@ -1,3 +1,6 @@
+# 0.5.1
+- update how multiple spiders are scheduled 
+
 # 0.5
 - add TypeGuard type checking which supports python type annotation like matching: e.g. List\[Union\[str,int\]]
 - add `-s` and `-c` flags for overriding config and settings entries respectively
