@@ -1,3 +1,7 @@
+# 0.6
+- add Url, Only and Any testers
+- add and adjust tests for `tests`
+
 # 0.5.1
 - update how multiple spiders are scheduled 
 

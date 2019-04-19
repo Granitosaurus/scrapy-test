@@ -1,6 +1,41 @@
 from scrapytest.tests import *
 
 
+def test_Only():
+    assert not Only('abc')('abbbcccaaa')
+    assert Only('abc')('z')
+    assert Only('abc')('abcz')
+    assert Only(['a', 'b'])(['a', 'z'])
+    assert not Only(['a', 'b'])(['a', 'b'])
+    assert Map(Only('abc'))(['a', 'b', 'cd'])
+    assert not Map(Only('abc'))(['a', 'b'])
+
+
+def test_Any():
+    assert Any(MoreThan(10), LessThan(8))(9) == ['9 !> 10', '9 !< 8']
+    assert not Any(MoreThan(10), LessThan(8))(6)
+    assert not Any(MoreThan(10), LessThan(8))(11)
+
+
+def test_Url():
+    assert Url(netloc='foobar.com')('http://foo.com')
+    assert not Url(netloc='foobar.com')('http://foobar.com')
+
+    assert Url()('/cats')
+    assert not Url(is_absolute=False)('/cats')
+
+    assert Url(path='cats')('http://foobar.com/cat')
+    assert not Url(path='cats')('http://foobar.com/cats')
+    assert not Url(path='cats+')('http://foobar.com/catssss')
+
+    assert not Url(params='version=1.1')('http://foobar.com/cats;version=1.1')
+    assert not Url(query='dog=woof&cat=meow')('http://foobar.com/cats?dog=woof&cat=meow')
+    assert not Url(fragment='why-cats-are-delicious')('http://foobar.com/cats#why-cats-are-delicious')
+
+    assert not Any(Url(netloc='foo.com'), Url(netloc='bar.com'))('http://foo.com')
+    assert not Any(Url(netloc='foo.com'), Url(netloc='bar.com'))('http://bar.com')
+
+
 def test_Pass():
     p = Pass()
     assert p() == ''

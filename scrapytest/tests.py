@@ -1,4 +1,5 @@
 import re
+from urllib.parse import urlparse
 
 from scrapytest.utils import is_empty
 
@@ -106,6 +107,17 @@ class _Compare:
         return f'{type(self).__name__}({self.value})'
 
 
+class Only:
+    def __init__(self, values):
+        self.values = values
+
+    def __call__(self, value):
+        bad = [c for c in value if c not in self.values]
+        if bad:
+            return f'value "{value}" contains disallowed values: {bad}'
+        return ''
+
+
 class Len:
     class less_than(_Compare):
         def __call__(self, value):
@@ -167,6 +179,47 @@ class Pass:
         return ''
 
 
+class Url:
+    """
+    Test url parts with defined regex patterns
+    """
+
+    def __init__(self, netloc='', path='', params='', query='', fragment='', is_absolute=True):
+        self.path = re.compile(path) if path else None
+        self.params = re.compile(params) if params else None
+        self.query = re.compile(query) if query else None
+        self.fragment = re.compile(fragment) if fragment else None
+        self.netloc = re.compile(netloc) if netloc else None
+        self.is_absolute = is_absolute
+
+    def __call__(self, value):
+        url = urlparse(value)
+        if self.is_absolute and not url.netloc:
+            return f'not an absolute url: {value}'
+        for key in ['netloc', 'path', 'params', 'query', 'fragment']:
+            pattern = getattr(self, key)
+            value = getattr(url, key)
+            if pattern and not pattern.search(value):
+                return f'mismatched url.{key}: "{value}" expected: "{pattern.pattern}"'
+        return ''
+
+
+class Any:
+    """pass at least one of supplied test function"""
+
+    def __init__(self, *funcs):
+        self.funcs = funcs
+
+    def __call__(self, value):
+        messages = []
+        for func in self.funcs:
+            msg = func(value)
+            if not msg:
+                return []
+            messages.append(msg)
+        return messages
+
+
 class Type:
     """Check whether value matches a type"""
 
@@ -178,8 +231,8 @@ class Type:
     def __call__(self, value):
         try:
             check_type('', value, self.type)
-        except TypeError as e:
-            return e.args[0]
+        except TypeError:
+            return f'{value} is unexpected type {type(value)}, expected {self.type}'
         return ''
 
     def __eq__(self, other):
