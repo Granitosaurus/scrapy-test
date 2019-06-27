@@ -105,6 +105,8 @@ class Validator:
 
     def validate_coverage(self, items) -> List[str]:
         messages = []
+        if not self.item_specs:
+            return messages
         for item_cls, counter in self.count_fields(items).items():
             try:
                 spec = self.item_specs[item_cls]
@@ -134,7 +136,7 @@ class Validator:
         try:
             spec = self.item_specs[type(item)]
         except KeyError as e:
-            if self.skip_items_without_spec:
+            if self.skip_items_without_spec or isinstance(item, dict):
                 return messages
             else:
                 return [f'Missing specification for {type(item)}']
