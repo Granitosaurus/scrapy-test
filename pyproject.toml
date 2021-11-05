@@ -10,6 +10,7 @@ packages = [{ include = "scrapytest" }]
 python = "^3.6"
 click = "^7.0"
 scrapy = "^1.8.0"
+typeguard = "^2.13.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3.1"
