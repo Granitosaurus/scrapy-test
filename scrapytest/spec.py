@@ -20,18 +20,23 @@ class ItemSpec:
     item_cls = NotImplemented
     tests = None
     coverage = None
+    ints = None
     default_cov = 0.1
     default_test = Pass()
+    default_int = Pass()
 
     def __init__(self):
         self.coverage = {}
         self.tests = {}
         for k in dir(self):
-            if k.endswith('_test') and k != 'default_test':
+            if (k.endswith('_test') or k.endswith('_int')) and k != 'default_test':
                 funcs = getattr(self, k)
                 if not isinstance(funcs, (list, tuple)):
                     funcs = [funcs]
-                self.tests[k.split('_test')[0]] = Compose(*funcs)
+                if(k.endswith('_test')):
+                    self.tests[k.split('_test')[0]] = Compose(*funcs)
+                else:
+                    self.ints = Compose(*funcs)
             if k.endswith('_cov') and k != 'default_cov':
                 self.coverage[k.split('_cov')[0]] = getattr(self, k)
 

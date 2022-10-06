@@ -140,6 +140,11 @@ class Validator:
                 return messages
             else:
                 return [f'Missing specification for {type(item)}']
+        
+        int_func = spec.ints or spec.default_int
+        for msg in int_func(item):
+            if msg:
+                messages.append(f'{obj_name(item)}: {msg}')
         for key, value in item.items():
             if self._field_is_missing(value):
                 continue
