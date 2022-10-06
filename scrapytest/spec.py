@@ -11,11 +11,17 @@ class ItemSpec:
 
     class MyItemSpec:
         item_cls = MyItem
-        # with lambdas
+        # Test
+        ## with lambdas
         field_test = lambda value: 'failure' if value < 100 else ''
-        # with inbuilt testers
+        ## with inbuilt testers
         field2_test = Match('foobar\d+')
         field3_test = Type(int), MoreThan(1), LessThan(5)
+        # Test with whole item
+        name_int = lambda item: 'failure' if item['field'] < 100 else ''
+        # Coverage
+        field_cov = 0.5
+        field2_cov = 0.8
     """
     item_cls = NotImplemented
     tests = None

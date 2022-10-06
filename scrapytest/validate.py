@@ -129,7 +129,7 @@ class Validator:
     def validate_item(self, item: Item) -> List:
         """
         Validate item.
-        :param item: Srapy.Item object
+        :param item: Scrapy.Item object
         :return: list of messages if any failures are encountered
         """
         messages = []
